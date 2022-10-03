@@ -3,12 +3,12 @@ solver_name: "lacam"
 solver_options:
   - "--objective"
   - "2"
-num_min_agents: 250
-num_max_agents: 1000
+num_min_agents: 50
+num_max_agents: 100
 num_interval_agents: 50
 time_limit_sec: 5
 seeds: 1  # the number of iterations
-scen: random
+scen: scen-random
 maps:
   # - Berlin_1_256
   # - Boston_0_256
