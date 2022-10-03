@@ -97,7 +97,6 @@ function main(config_file)
             "-l",
             solver_options...,
         ]
-        println(command)
         run(pipeline(`$command`))
 
         # store results
