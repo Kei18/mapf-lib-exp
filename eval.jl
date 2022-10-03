@@ -95,8 +95,9 @@ function main(config_file)
             "-t", time_limit_sec,
             "-s", seed,
             "-l",
-            solver_options,
+            solver_options...,
         ]
+        println(command)
         run(pipeline(`$command`))
 
         # store results
