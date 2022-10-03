@@ -22,7 +22,7 @@ function print_summary(csv_filename::String)
     comp_time = df |> @filter(_.solved == 1) |> @map(_.comp_time) |> collect
     describe = (x) -> "max=$(r(maximum(x)))\tmean=$(r(mean(x)))\tmed=$(r(median(x)))"
     println(
-        "solved: $(num_solved)/$(num_total)=$(num_solved/num_total)" *
+        "solved: $(num_solved)/$(num_total)=$(r(num_solved/num_total))" *
             "\tcomp_time(ms): $(describe(comp_time))"
     )
 end
