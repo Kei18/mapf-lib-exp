@@ -34,6 +34,7 @@ function main(config_file)
     seed_start = get(config, "seed_start", 1)
     seed_end = get(config, "seed_end", seed_start)
     time_limit_sec = get(config, "time_limit_sec", 10)
+    time_limit_sec_force = get(config, "time_limit_sec_force", time_limit_sec + 30)
     scen = get(config, "scen", "scen-random")
     num_min_agents = get(config, "num_min_agents", 10)
     num_max_agents = get(config, "num_max_agents", 1000)
@@ -88,6 +89,7 @@ function main(config_file)
     Threads.@threads for (k, (scen_file, map_file, N, seed)) in loops
         output_file = joinpath(tmp_dir, "result-$(k).txt")
         command = [
+            "timeout", "$(time_limit_sec_force)s"
             exec_file,
             "-m", map_file,
             "-i", scen_file,
@@ -98,7 +100,11 @@ function main(config_file)
             "-l",
             solver_options...,
         ]
-        run(pipeline(`$command`))
+        try
+            run(pipeline(`$command`))
+        catch e
+            nothing
+        end
 
         # store results
         row = Dict(
@@ -116,27 +122,28 @@ function main(config_file)
             :sum_of_loss => 0,
             :sum_of_loss_lb => 0,
         )
-        for line in readlines(output_file)
-            m = match(r"soc=(\d+)", line)
-            !isnothing(m) && (row[:soc] = parse(Int, m[1]))
-            m = match(r"soc_lb=(\d+)", line)
-            !isnothing(m) && (row[:soc_lb] = parse(Int, m[1]))
-            m = match(r"makespan=(\d+)", line)
-            !isnothing(m) && (row[:makespan] = parse(Int, m[1]))
-            m = match(r"makespan_lb=(\d+)", line)
-            !isnothing(m) && (row[:makespan_lb] = parse(Int, m[1]))
-            m = match(r"sum_of_loss=(\d+)", line)
-            !isnothing(m) && (row[:sum_of_loss] = parse(Int, m[1]))
-            m = match(r"sum_of_loss_lb=(\d+)", line)
-            !isnothing(m) && (row[:sum_of_loss_lb] = parse(Int, m[1]))
-            m = match(r"comp_time=(\d+)", line)
-            !isnothing(m) && (row[:comp_time] = parse(Int, m[1]))
-            m = match(r"solved=(\d+)", line)
-            !isnothing(m) && (row[:solved] = parse(Int, m[1]))
+        if isfile(output_file)
+            for line in readlines(output_file)
+                m = match(r"soc=(\d+)", line)
+                !isnothing(m) && (row[:soc] = parse(Int, m[1]))
+                m = match(r"soc_lb=(\d+)", line)
+                !isnothing(m) && (row[:soc_lb] = parse(Int, m[1]))
+                m = match(r"makespan=(\d+)", line)
+                !isnothing(m) && (row[:makespan] = parse(Int, m[1]))
+                m = match(r"makespan_lb=(\d+)", line)
+                !isnothing(m) && (row[:makespan_lb] = parse(Int, m[1]))
+                m = match(r"sum_of_loss=(\d+)", line)
+                !isnothing(m) && (row[:sum_of_loss] = parse(Int, m[1]))
+                m = match(r"sum_of_loss_lb=(\d+)", line)
+                !isnothing(m) && (row[:sum_of_loss_lb] = parse(Int, m[1]))
+                m = match(r"comp_time=(\d+)", line)
+                !isnothing(m) && (row[:comp_time] = parse(Int, m[1]))
+                m = match(r"solved=(\d+)", line)
+                !isnothing(m) && (row[:solved] = parse(Int, m[1]))
+            end
+            rm(output_file)
         end
         result[k] = NamedTuple{Tuple(keys(row))}(values(row))
-        rm(output_file)
-
         Threads.atomic_add!(cnt_fin, 1)
         print("\r" *
               "$(r((Base.time_ns() - t_start) / 1.0e9)) sec" *
