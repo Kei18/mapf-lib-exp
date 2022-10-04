@@ -31,7 +31,8 @@ function main(config_file)
     # load experimental setting
     config = YAML.load_file(config_file)
     exec_file = get(config, "exec_file", joinpath(@__DIR__, "..", "build", "main"))
-    seeds = get(config, "seeds", 1)
+    seed_start = get(config, "seed_start", 1)
+    seed_end = get(config, "seed_end", seed_start)
     time_limit_sec = get(config, "time_limit_sec", 10)
     scen = get(config, "scen", "scen-random")
     num_min_agents = get(config, "num_min_agents", 10)
@@ -67,7 +68,7 @@ function main(config_file)
             )
             agents = collect(num_min_agents:num_interval_agents:N_max)
             (isempty(agents) || last(agents) != N_max) && push!(agents, N_max)
-            vcat(Iterators.product([x], [map_name], agents, collect(1:seeds))...)
+            vcat(Iterators.product([x], [map_name], agents, collect(seed_start:seed_end))...)
         end) |>
         collect |>
         x -> vcat(x...) |>
