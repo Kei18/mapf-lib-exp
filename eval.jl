@@ -89,7 +89,7 @@ function main(config_file)
     Threads.@threads for (k, (scen_file, map_file, N, seed)) in loops
         output_file = joinpath(tmp_dir, "result-$(k).txt")
         command = [
-            "timeout", "$(time_limit_sec_force)s"
+            "timeout", "$(time_limit_sec_force)s",
             exec_file,
             "-m", map_file,
             "-i", scen_file,
