@@ -146,7 +146,7 @@ function main(config_file)
                 m = match(r"solved=(\d+)", line)
                 if !isnothing(m)
                     row[:solved] = parse(Int, m[1])
-                    Threads.atomic_add!(cnt_solved, 1)
+                    row[:solved] && (Threads.atomic_add!(cnt_solved, 1))
                 end
             end
             rm(output_file)
