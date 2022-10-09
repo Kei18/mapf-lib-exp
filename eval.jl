@@ -47,9 +47,13 @@ function main(config_file)
     !isdir(root_dir) && mkpath(root_dir)
 
     # save configuration file
+    io = IOBuffer()
+    versioninfo(io, verbose=true)
     additional_info = Dict(
         "git_hash" => read(`git log -1 --pretty=format:"%H"`, String),
         "date" => date_str,
+        "nthreads" => Threads.nthreads(),
+        "env" => String(take!(io)),
     )
     YAML.write_file(joinpath(root_dir, "config.yaml"), merge(config, additional_info))
 
@@ -83,6 +87,7 @@ function main(config_file)
     # main loop
     num_total_tasks = length(loops)
     cnt_fin = Threads.Atomic{Int}(0)
+    cnt_solved = Threads.Atomic{Int}(0)
     result = Vector{Any}(undef, num_total_tasks)
     t_start = Base.time_ns()
 
@@ -139,7 +144,10 @@ function main(config_file)
                 m = match(r"comp_time=(\d+)", line)
                 !isnothing(m) && (row[:comp_time] = parse(Int, m[1]))
                 m = match(r"solved=(\d+)", line)
-                !isnothing(m) && (row[:solved] = parse(Int, m[1]))
+                if !isnothing(m)
+                    row[:solved] = parse(Int, m[1])
+                    Threads.atomic_add!(cnt_solved, 1)
+                end
             end
             rm(output_file)
         end
@@ -149,7 +157,8 @@ function main(config_file)
               "$(r((Base.time_ns() - t_start) / 1.0e9)) sec" *
               "\t$(cnt_fin[])/$(num_total_tasks) " *
               "($(r(cnt_fin[]/num_total_tasks*100))%)" *
-              " tasks have been finished"
+              " tasks have been finished, " *
+              "solved: $(cnt_solved[])/$(cnt_fin[])=$(cnt_solved[]/cnt_fin[])"
         )
     end
 
