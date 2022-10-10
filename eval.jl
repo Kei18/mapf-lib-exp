@@ -9,7 +9,8 @@ using DataFrames
 using Query
 import Statistics: mean, median
 
-r = (x) -> round(x, digits=3)
+# round
+r = (x) -> round(x, digits = 3)
 
 function print_summary(csv_filename::String)
     df = CSV.File(csv_filename) |> DataFrame
@@ -23,7 +24,7 @@ function print_summary(csv_filename::String)
     describe = (x) -> "max=$(r(maximum(x)))\tmean=$(r(mean(x)))\tmed=$(r(median(x)))"
     println(
         "solved: $(num_solved)/$(num_total)=$(r(num_solved/num_total))" *
-            "\tcomp_time(ms): $(describe(comp_time))"
+        "\tcomp_time(ms): $(describe(comp_time))",
     )
 end
 
@@ -48,7 +49,7 @@ function main(config_file)
 
     # save configuration file
     io = IOBuffer()
-    versioninfo(io, verbose=true)
+    versioninfo(io, verbose = true)
     additional_info = Dict(
         "git_hash" => read(`git log -1 --pretty=format:"%H"`, String),
         "date" => date_str,
@@ -62,23 +63,32 @@ function main(config_file)
         readdir(joinpath(@__DIR__, "scen", scen)) |>
         @filter(x -> !isnothing(match(r".scen$", x))) |>
         @map(x -> joinpath(@__DIR__, "scen", scen, x)) |>
-        @filter(x -> last(split(match(r"\d+\t(.+).map\t.+", readlines(x)[2])[1], "/")) in maps) |>
-        @map(x -> begin
-            lines = readlines(x)
-            N_max = min(length(lines) - 1, num_max_agents)
-            map_name = joinpath(
-                @__DIR__,
-                 "map",
-                 last(split(match(r"\d+\t(.+).map\t(.+)", lines[2])[1], "/")) * ".map"
-            )
-            agents = collect(num_min_agents:num_interval_agents:N_max)
-            (isempty(agents) || last(agents) != N_max) && push!(agents, N_max)
-            vcat(Iterators.product([x], [map_name], agents, collect(seed_start:seed_end))...)
-        end) |>
+        @filter(
+            x -> last(split(match(r"\d+\t(.+).map\t.+", readlines(x)[2])[1], "/")) in maps
+        ) |>
+        @map(
+            x -> begin
+                lines = readlines(x)
+                N_max = min(length(lines) - 1, num_max_agents)
+                map_name = joinpath(
+                    @__DIR__,
+                    "map",
+                    last(split(match(r"\d+\t(.+).map\t(.+)", lines[2])[1], "/")) * ".map",
+                )
+                agents = collect(num_min_agents:num_interval_agents:N_max)
+                (isempty(agents) || last(agents) != N_max) && push!(agents, N_max)
+                vcat(
+                    Iterators.product(
+                        [x],
+                        [map_name],
+                        agents,
+                        collect(seed_start:seed_end),
+                    )...,
+                )
+            end
+        ) |>
         collect |>
-        x -> vcat(x...) |>
-             x -> enumerate(x) |>
-                  collect
+        x -> vcat(x...) |> x -> enumerate(x) |> collect
 
     # prepare tmp directory
     tmp_dir = joinpath(@__DIR__, "tmp")
@@ -94,14 +104,21 @@ function main(config_file)
     Threads.@threads for (k, (scen_file, map_file, N, seed)) in loops
         output_file = joinpath(tmp_dir, "result-$(k).txt")
         command = [
-            "timeout", "$(time_limit_sec_force)s",
+            "timeout",
+            "$(time_limit_sec_force)s",
             exec_file,
-            "-m", map_file,
-            "-i", scen_file,
-            "-N", N,
-            "-o", output_file,
-            "-t", time_limit_sec,
-            "-s", seed,
+            "-m",
+            map_file,
+            "-i",
+            scen_file,
+            "-N",
+            N,
+            "-o",
+            output_file,
+            "-t",
+            time_limit_sec,
+            "-s",
+            seed,
             "-l",
             solver_options...,
         ]
@@ -153,12 +170,13 @@ function main(config_file)
         end
         result[k] = NamedTuple{Tuple(keys(row))}(values(row))
         Threads.atomic_add!(cnt_fin, 1)
-        print("\r" *
-              "$(r((Base.time_ns() - t_start) / 1.0e9)) sec" *
-              "\t$(cnt_fin[])/$(num_total_tasks) " *
-              "($(r(cnt_fin[]/num_total_tasks*100))%)" *
-              " tasks have been finished, " *
-              "solved: $(cnt_solved[])/$(cnt_fin[]) ($(r(cnt_solved[]/cnt_fin[]*100))%)"
+        print(
+            "\r" *
+            "$(r((Base.time_ns() - t_start) / 1.0e9)) sec" *
+            "\t$(cnt_fin[])/$(num_total_tasks) " *
+            "($(r(cnt_fin[]/num_total_tasks*100))%)" *
+            " tasks have been finished, " *
+            "solved: $(cnt_solved[])/$(cnt_fin[]) ($(r(cnt_solved[]/cnt_fin[]*100))%)",
         )
     end
 
