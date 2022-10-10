@@ -158,7 +158,7 @@ function main(config_file)
               "\t$(cnt_fin[])/$(num_total_tasks) " *
               "($(r(cnt_fin[]/num_total_tasks*100))%)" *
               " tasks have been finished, " *
-              "solved: $(cnt_solved[])/$(cnt_fin[])=$(cnt_solved[]/cnt_fin[])"
+              "solved: $(cnt_solved[])/$(cnt_fin[]) ($(r(cnt_solved[]/cnt_fin[]*100))%)"
         )
     end
 
