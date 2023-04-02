@@ -44,7 +44,7 @@ function main(config_file)
     solver_options = get(config, "solver_options", [])
     maps = get(config, "maps", Vector{String}())
     date_str = replace(string(Dates.now()), ":" => "-")
-    root_dir = joinpath(pwd(), "..", "data", "exp", date_str)
+    root_dir = joinpath(get(config, "root", joinpath(pwd(), "..", "data", "exp")), date_str)
     !isdir(root_dir) && mkpath(root_dir)
 
     # save configuration file
